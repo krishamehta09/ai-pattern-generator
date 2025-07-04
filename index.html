@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Pattern Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-gray-900">
+  <header class="p-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex justify-between items-center shadow-lg">
+    <h1 class="text-2xl font-bold">🎨 AI Pattern Generator</h1>
+  </header>
+
+  <main class="flex-1 p-6 space-y-6 max-w-5xl mx-auto">
+    <!-- Inputs -->
+    <div class="grid md:grid-cols-3 gap-6">
+      <div>
+        <label class="block text-sm font-medium mb-1">Style</label>
+        <input id="styleInput" class="p-3 border rounded w-full" placeholder="e.g. leopard print" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Colors</label>
+        <input id="colorsInput" class="p-3 border rounded w-full" placeholder="e.g. gold, brown" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Elements</label>
+        <input id="elementsInput" class="p-3 border rounded w-full" placeholder="e.g. rosettes" />
+      </div>
+    </div>
+
+    <!-- Parameters -->
+    <div class="grid md:grid-cols-4 gap-6">
+      <div>
+        <label class="block text-sm font-medium mb-1">Width</label>
+        <input id="widthInput" type="number" value="256" class="p-3 border rounded w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Height</label>
+        <input id="heightInput" type="number" value="256" class="p-3 border rounded w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Steps</label>
+        <input id="stepsInput" type="number" value="20" class="p-3 border rounded w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Guidance Scale</label>
+        <input id="guidanceInput" type="number" value="8.0" step="0.1" class="p-3 border rounded w-full" />
+      </div>
+    </div>
+
+    <button id="generateBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded shadow">
+      ➕ Generate Pattern
+    </button>
+
+    <!-- Preview -->
+    <div id="designContainer" class="mt-6 space-y-4 hidden">
+      <h2 class="text-xl font-semibold">🖼 Generated Pattern</h2>
+      <img id="generatedImage" src="" alt="Generated Pattern" class="border rounded w-full max-w-md mx-auto shadow" />
+      <div id="patternPrompt" class="text-center text-sm text-gray-600"></div>
+    </div>
+
+    <!-- Gallery -->
+    <div id="galleryContainer" class="mt-10">
+      <h2 class="text-xl font-semibold mb-4">🧩 Pattern Gallery</h2>
+      <div id="gallery" class="grid md:grid-cols-3 gap-6"></div>
+    </div>
+  </main>
+
+  <script>
+    const generateBtn = document.getElementById("generateBtn");
+    const gallery = document.getElementById("gallery");
+    const designContainer = document.getElementById("designContainer");
+    const generatedImage = document.getElementById("generatedImage");
+    const patternPrompt = document.getElementById("patternPrompt");
+
+    const loadGallery = () => {
+      const saved = JSON.parse(localStorage.getItem("patternGallery") || "[]");
+      gallery.innerHTML = "";
+      saved.forEach((item, index) => renderPattern(item, index));
+    };
+
+    const saveToGallery = (pattern) => {
+      const existing = JSON.parse(localStorage.getItem("patternGallery") || "[]");
+      existing.unshift(pattern);
+      localStorage.setItem("patternGallery", JSON.stringify(existing));
+      loadGallery();
+    };
+
+    const deletePattern = (index) => {
+      const existing = JSON.parse(localStorage.getItem("patternGallery") || "[]");
+      existing.splice(index, 1);
+      localStorage.setItem("patternGallery", JSON.stringify(existing));
+      loadGallery();
+    };
+
+    const renderPattern = ({ url, prompt }, index) => {
+      const div = document.createElement("div");
+      div.className = "border rounded overflow-hidden shadow bg-white";
+      div.innerHTML = `
+        <img src="${url}" alt="pattern" class="w-full max-h-64 object-cover" />
+        <div class="p-4">
+          <p class="text-sm mb-2 font-medium">📝 ${prompt}</p>
+          <div class="flex justify-between">
+            <a href="${url}" download="pattern.png" class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded">⬇ Download</a>
+            <button class="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded delete-btn" data-index="${index}">🗑 Delete</button>
+          </div>
+        </div>
+      `;
+      gallery.appendChild(div);
+    };
+
+    document.addEventListener("click", (e) => {
+      if (e.target.matches(".delete-btn")) {
+        const index = parseInt(e.target.dataset.index);
+        deletePattern(index);
+      }
+    });
+
+    generateBtn.onclick = async () => {
+      const style = document.getElementById("styleInput").value.trim();
+      const colors = document.getElementById("colorsInput").value.trim();
+      const elements = document.getElementById("elementsInput").value.trim();
+      const width = parseInt(document.getElementById("widthInput").value);
+      const height = parseInt(document.getElementById("heightInput").value);
+      const steps = parseInt(document.getElementById("stepsInput").value);
+      const guidance = parseFloat(document.getElementById("guidanceInput").value);
+
+      if (!style && !colors && !elements) {
+        alert("Please enter at least one preference.");
+        return;
+      }
+
+      let prompt = "seamless repeating pattern, tileable";
+      if (style) prompt += `, ${style}`;
+      if (colors) prompt += ` in ${colors}`;
+      if (elements) prompt += `, ${elements}`;
+      prompt += ", flat vector illustration, modern minimal design";
+
+      try {
+        const res = await fetch("/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, width, height, steps, guidance_scale: guidance })
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+
+        designContainer.classList.remove("hidden");
+        generatedImage.src = url;
+        patternPrompt.textContent = prompt;
+
+        saveToGallery({ url, prompt });
+
+      } catch (e) {
+        alert("Error: " + e.message);
+      }
+    };
+
+    loadGallery();
+  </script>
+</body>
+</html>
