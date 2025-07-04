@@ -1,0 +1,1 @@
+# ai-pattern-generator
