@@ -8,6 +8,8 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from diffusers import StableDiffusionPipeline, DPMSolverMultistepScheduler
 
+
+
 # ─── Configuration ─────────────────────────────────────────
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODEL_ID = "stabilityai/stable-diffusion-2-base"
@@ -27,6 +29,9 @@ BASE_NEGATIVE = "faces, text, logo, background blur, photorealistic, watermark, 
 
 # ─── FastAPI setup ─────────────────────────────────────────
 app = FastAPI()
+@app.get("/")
+def root():
+    return {"message": "App is live"}
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # lock this down in prod!
