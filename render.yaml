@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ai-pattern-generator
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
