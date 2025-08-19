@@ -18,6 +18,7 @@ docker build -t ai-pattern-generator .
 
 # Run the container
 docker run -p 7860:7860 ai-pattern-generator
+Then open http://localhost:7860 in your browser 🎉
 
 🌐 Deployment (Hugging Face Spaces)
 
