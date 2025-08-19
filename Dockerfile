@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-# Install dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -10,14 +10,19 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# Copy requirements first (for Docker cache)
 COPY requirements.txt .
+
+# Upgrade pip and install Python deps
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
 COPY server.py .
 COPY index.html .
 
-# Install Python packages
-RUN pip install --upgrade pip
-RUN pip install --prefer-binary -r requirements.txt
+# Hugging Face Spaces expects port 7860
+EXPOSE 7860
 
-EXPOSE 5000
-
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "5000"]
+# Run FastAPI app
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "7860"]
