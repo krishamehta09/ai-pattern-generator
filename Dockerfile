@@ -20,6 +20,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY server.py .
 COPY index.html .
+COPY README.md .
 
 # Hugging Face Spaces expects port 7860
 EXPOSE 7860
